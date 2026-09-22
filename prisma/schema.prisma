@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  ENGINEER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id          Int           @id @default(autoincrement())
+  firebaseUid String        @unique
+  email       String        @unique
+  name        String
+  address     String?
+  role        UserRole      @default(USER)
+  status      UserStatus    @default(ACTIVE)
+  userName    String?
+  projectName String?
+  companyName String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  projects    UserProject[]
+}
+
+enum ProjectFundingType {
+  CAPEX
+  OPEX
+}
+
+model Project {
+  id                      Int                 @id @default(autoincrement())
+  solarmanPlantId         Int                 @unique
+  name                    String
+  description             String?
+  meta                    Json?
+  fundingType             ProjectFundingType?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  tarrif                  Float?
+  dollarRate              Float?
+  users                   UserProject[]
+  exportMeterSerialNumber String?
+  importMeterSerialNumber String?
+  imageUrl                String?
+  companies               Company[]
+  inverters               Inverter[]
+}
+
+model UserProject {
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  @@id([userId, projectId])
+}
+
+model Company {
+  id        Int        @id @default(autoincrement())
+  name      String
+  code      String     @unique
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int?
+  buildings Building[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Building {
+  id        Int        @id @default(autoincrement())
+  name      String
+  code      String
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+  inverters Inverter[]
+  meters    Meter[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Inverter {
+  id         Int                 @id @default(autoincrement())
+  deviceSn   String
+  deviceId   Int
+  capacity   Float?
+  code       String?
+  note       String?
+  building   Building?           @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId Int?
+  project    Project?            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  Int
+  dailyData  InverterDailyData[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+}
+
+enum InverterUpdateStatus {
+  UPDATED
+  PENDING
+}
+
+model InverterDailyData {
+  id           Int                  @id @default(autoincrement())
+  collectTime  DateTime
+  generation   Float
+  inverter     Inverter             @relation(fields: [inverterId], references: [id], onDelete: Cascade)
+  inverterId   Int
+  frameData    String?
+  updateStatus InverterUpdateStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([inverterId, collectTime], name: "inverter_daily_data_idx")
+}
+
+model Meter {
+  id                      Int      @id @default(autoincrement())
+  importMeterCode         String   @unique
+  exportMeterCode         String   @unique
+  importMeterSerialNumber String   @unique
+  exportMeterSerialNumber String   @unique
+  building                Building @relation(fields: [buildingId], references: [id])
+  buildingId              Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model InverterFrameDataCache {
+  id       Int    @id @default(autoincrement())
+  cacheKey String @unique
+  data     String
+}

@@ -1,0 +1,8 @@
+{
+    "version": 2,
+    "name":"solaric-monitoring-dashboard-backend",
+    "builds": [{ "src": "package.json", "use": "@vercel/node" }],
+    "rewrites": [
+        { "source": "/(.*)", "destination": "dist/main.js" }
+    ]
+}

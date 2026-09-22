@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:14.1-alpine
+    container_name: postgres
+    restart: no
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./data:/var/lib/postgresql/dat
+
+#  redis:
+#    image: redis:latest
+# restart: no
+#    volumes:
+#      - ./data/redis:/data
+#    networks:
+#      - db-network
+#    ports:
+#      - 6379:6379
+
+#networks:
+  #`db-network:
+
+#postgresql://postgres_user:postgres_pass@localhost:5432/postgres_db
